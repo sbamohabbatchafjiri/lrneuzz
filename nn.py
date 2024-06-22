@@ -346,9 +346,13 @@ def build_model():
 
     model = Sequential()
     model.add(Dense(4096, input_dim=MAX_FILE_SIZE))
-    model.add(Activation('relu'))
+    model.add(LeakyReLU(alpha=0.2))  # Adjust alpha as per your requirement
+    model.add(Dense(1024))
+    model.add(LeakyReLU(alpha=0.2))  # Adjust alpha as per your requirement
+    model.add(Dense(512))
+    model.add(LeakyReLU(alpha=0.2))  # Adjust alpha as per your requirement
     model.add(Dense(num_classes))
-    model.add(Activation('sigmoid'))
+    model.add(Activation('sigmoid')
 
     opt = keras.optimizers.adam(lr=0.0001)
 
