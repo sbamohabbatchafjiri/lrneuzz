@@ -1,24 +1,41 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
+import pickle
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 import glob
 import math
 import time
+from functools import partial
 import keras
 import random
 import socket
 import subprocess
+import h5py
 import numpy as np
 import tensorflow as tf
 import keras.backend as K
 from collections import Counter
-from tensorflow import set_random_seed
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
+set_random_seed = tf.compat.v1.set_random_seed
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import ReLU, LeakyReLU, Input, Dense, Dropout, Activation
 from keras.callbacks import ModelCheckpoint
+from keras.models import Model
+from keras.utils import to_categorical
+import tensorflow as tf
+import tensorflow.keras as keras
+from tensorflow.keras.optimizers import Adam
+from keras.backend.tensorflow_backend import set_session
+from keras.backend.tensorflow_backend import clear_session
+from keras.backend.tensorflow_backend import get_session
+import gc
+import statistics
+
+
+
 
 HOST = '127.0.0.1'
 PORT = 12012
@@ -31,7 +48,7 @@ round_cnt = 0
 seed = 12
 np.random.seed(seed)
 random.seed(seed)
-set_random_seed(seed)
+tf.random.set_seed(seed)
 seed_list = glob.glob('./seeds/*')
 new_seeds = glob.glob('./seeds/id_*')
 SPLIT_RATIO = len(seed_list)
@@ -227,7 +244,7 @@ def splice_seed(fl1, fl2, idxx):
 def gen_adv2(f, fl, model, layer_list, idxx, splice):
     adv_list = []
     loss = layer_list[-2][1].output[:, f]
-    grads = K.gradients(loss, model.input)[0]
+    grads = tf.GradientTape(loss, model.input)[0]
     iterate = K.function([model.input], [loss, grads])
     ll = 2
     while fl[0] == fl[1]:
@@ -264,7 +281,7 @@ def gen_adv2(f, fl, model, layer_list, idxx, splice):
 def gen_adv3(f, fl, model, layer_list, idxx, splice):
     adv_list = []
     loss = layer_list[-2][1].output[:, f]
-    grads = K.gradients(loss, model.input)[0]
+    grads = tf.GradientTape(loss, model.input)[0]
     iterate = K.function([model.input], [loss, grads])
     ll = 2
     while fl[0] == fl[1]:
@@ -352,9 +369,9 @@ def build_model():
     model.add(Dense(512))
     model.add(LeakyReLU(alpha=0.2))  # Adjust alpha as per your requirement
     model.add(Dense(num_classes))
-    model.add(Activation('sigmoid')
+    model.add(Activation('sigmoid'))
 
-    opt = keras.optimizers.adam(lr=0.0001)
+    opt = keras.optimizers.Adam(lr=0.0001)
 
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=[accur_1])
     model.summary()
